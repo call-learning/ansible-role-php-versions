@@ -8,9 +8,25 @@
     name: dirmngr
     state: present
 
-- name: Add repository for PHP versions (Ubuntu).
-  apt_repository: repo='ppa:ondrej/php'
-  when: ansible_distribution == "Ubuntu"
+- name: Add PHP repository for Ubuntu 22.04 and earlier
+  apt_repository:
+    repo: "ppa:ondrej/php"
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_version is version('24.04', '<')
+
+- name: Add PHP repository for Ubuntu 24.04 and later
+  ansible.builtin.command: add-apt-repository -y ppa:ondrej/php
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_version is version('24.04', '>=')
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_version is version('24.04', '>=')
 
 # Debian-specific tasks.
 - name: Add dependencies for PHP versions (Debian).
@@ -23,7 +39,7 @@
 
 - name: Add Ondrej Sury's apt key (Debian).
   apt_key:
-    url: https://packages.sury.org/php/apt.gpg
+    url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xb8dc7e53946656efbce4c1dd71daeaab4ad4cab6
     id: 15058500A0235D97F5D10063B188E2B695BD4743
     state: present
   when: ansible_distribution == "Debian"
